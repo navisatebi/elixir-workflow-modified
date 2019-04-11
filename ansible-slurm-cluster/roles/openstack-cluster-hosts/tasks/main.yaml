@@ -4,7 +4,7 @@
 
 - set_fact:
     deploymentkeyisset: "{{ lookup('env','KEY') }}"
-    deploymentkeyname: "{{ name }}-keypair"
+    deploymentkeyname: "{{ name }}-key"
 
 - name: Create OpenStack keypair
   os_keypair:
@@ -56,7 +56,7 @@
     security_groups:  "{{ lookup('env','SECURITY_GROUP_CLUSTER') | default('sg-cluster', true) }},{{ lookup('env','SECURITY_GROUP_GLUSTER') | default('sg-gluster', true) }},galaxy"  # TODO own sg for nodes?
     state: "{{ state }}"
     name: "{{ name }}-cluster-node-{{ item }}"
-    image: "{{ lookup('env','IMAGE') | default('Ubuntu16.04', true) }}"
+    image: "{{ lookup('env','IMAGE') | default('Ubuntu18.04', true) }}"
     boot_from_volume: "{{ lookup('env', 'MASTER_BOOT_FROM_VOLUME') | default('False', true) }}"
     terminate_volume: "{{ lookup('env', 'MASTER_TERMINATE_VOLUME') | default('False', true) }}"
     volume_size: "{{ lookup('env', 'MASTER_VOLUME_SIZE') | default('64', true) }}"
@@ -95,7 +95,7 @@
     ansible_host: "{{ item.server.private_v4 }}"  # n.b. ansible_ssh_host is deprecated
     ansible_ssh_private_key_file: "{{ lookup('env','PRIVATE_KEYPATH') }}" 
     ansible_ssh_user: ubuntu 
-    ansible_ssh_common_args: "-o ProxyCommand=\"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ lookup('env', 'BASTION_KEY') }} -W %h:%p -q {{ lookup('env','BASTION_USER') }}@{{ lookup('env','BASTION_IP') }}\" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    ansible_ssh_common_args: "-o ProxyCommand=\"ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o UserKnownHostsFile=/dev/null -i {{ lookup('env', 'BASTION_KEY') }} -W %h:%p -q {{ lookup('env','BASTION_USER') }}@{{ lookup('env','BASTION_IP') }}\" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
     groupname: cluster_masters
   with_items: 
     - "{{ master_instances.results }}"
@@ -108,7 +108,7 @@
     ansible_host: "{{ item.server.private_v4 }}"  # n.b. ansible_ssh_host is deprecated
     ansible_ssh_private_key_file: "{{ lookup('env','PRIVATE_KEYPATH') }}" 
     ansible_ssh_user: ubuntu 
-    ansible_ssh_common_args: "-o ProxyCommand=\"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {{ lookup('env', 'BASTION_KEY') }} -W %h:%p -q {{ lookup('env','BASTION_USER') }}@{{ lookup('env','BASTION_IP') }}\" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    ansible_ssh_common_args: "-o ProxyCommand=\"ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o UserKnownHostsFile=/dev/null -i {{ lookup('env', 'BASTION_KEY') }} -W %h:%p -q {{ lookup('env','BASTION_USER') }}@{{ lookup('env','BASTION_IP') }}\" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
     groupname: cluster_nodes
   with_items: 
     - "{{ node_instances.results }}"

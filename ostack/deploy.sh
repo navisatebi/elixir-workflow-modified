@@ -5,14 +5,22 @@ echo "＼(＾O＾)／ Setting up convenience OS_ENV"
 
 export APP="${PORTAL_APP_REPO_FOLDER}"
 export DEPLOYMENTSFOLDER="${PORTAL_DEPLOYMENTS_ROOT}/${PORTAL_DEPLOYMENT_REFERENCE}/"
-export KEYPATH=$PUBLIC_KEY
-export PRIVATE_KEYPATH=$PRIVATE_KEY
+export KEY_PATH=$PUBLIC_KEY
+export PRIV_KEY_PATH=$PRIVATE_KEY
 export DPL="${PORTAL_DEPLOYMENTS_ROOT}/${PORTAL_DEPLOYMENT_REFERENCE}/"
 
 export NETWORK=$OS_NETWORK  # Elixir-Proteomics_private
 
-echo $(echo $BASTION_KEY_VALUE) > "${DEPLOYMENTSFOLDER}.letmein"
-export BASTION_KEY="${DEPLOYMENTSFOLDER}.letmein"         #$TF_VAR_BASTION_KEY  # /home/user/.ssh/id_rsa
+export BASTION_KEY=$(echo -e $BASTION_KEY_VALUE)
+echo "${BASTION_KEY}" >> "${DEPLOYMENTSFOLDER}.letmein"
+chmod 600 "${DEPLOYMENTSFOLDER}.letmein"
+export BASTION_KEY="${DEPLOYMENTSFOLDER}.letmein"
+echo BASTION_KEY
+#export PRIVATE_KEYPATH="/Users/navis/.ssh/bastion_id"
+#export KEYPATH="/Users/navis/.ssh/bastion_id.pub"
+
+export PRIVATE_KEYPATH=$PRIVATE_KEY
+export KEYPATH=$PUBLIC_KEY
 
 export BASTION_IP=$TF_VAR_BASTION_IP  # 193.62.55.220
 export BASTION_USER=$TF_VAR_BASTION_USER  # sshuser
@@ -25,30 +33,11 @@ export REDIS_DB=$TF_VAR_REDIS_DB  # 1
 export CLUSTER_NAME=$PORTAL_DEPLOYMENT_REFERENCE  #cluster-deployment-1
 
 echo "＼(＾O＾)／ Applying workflow playbooks"
-#printf '%(%Y%m%d-%H:%M:%S)T\n'
 cd $DPL
 echo "cwd=$PWD"
 
-export PXD=root
+export PXD="PXD011124"
 
 # Deploy cluster
 ansible-playbook --flush-cache \
     $APP/ansible-slurm-cluster/playbook.yml -e "{'host_key_checking':false }" -vvv
-
-# Provide input
-ansible-playbook --flush-cache  -i $DEPLOYMENTSFOLDER/auto.ini \
-    $APP/ansible-digest-portalinput/prideclient-playbook.yml -e "{'host_key_checking':false }" \
-    -e "{'PXD':$PXD}"
-
-# Extract the result url
-URL=$(cat $DEPLOYMENTSFOLDER/result_get.res)
-
-ansible-playbook --flush-cache -b --become-user=root -i $DEPLOYMENTSFOLDER/auto.ini \
-    $APP/ansible-nf-fileinfo/nextflow-playbook.yml -e "{'host_key_checking':false }" \
-    -e "{'PXD':$PXD}"
-
-echo "＼(＾O＾)／ All done. Tearing down deployment"
-printf '%(%Y%m%d-%H:%M:%S)T\n'
-
-
-# killme
